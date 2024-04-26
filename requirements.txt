@@ -1,0 +1,9 @@
+transformers
+torch
+datasets
+huggingface-hub
+accelerate
+evaluate
+langchain
+sentence-transformers
+chromadb
