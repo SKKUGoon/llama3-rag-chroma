@@ -1,1 +1,1 @@
-chroma run --path ./asset
+ALLOW_RESET=TRUE chroma run --path ./asset

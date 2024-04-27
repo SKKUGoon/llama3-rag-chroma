@@ -4,7 +4,7 @@ import chromadb
 client = chromadb.HttpClient(host='localhost', port=8000)
 
 # Nanosecond heartbeat.
-client.heartbeat()
+result = client.heartbeat()
 
 # Reset?
 # client.reset()

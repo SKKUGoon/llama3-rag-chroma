@@ -44,3 +44,26 @@ And set up an virtual environment.
 pip install -r requirements.txt
 ```
 
+### On MacOS
+
+(TBD)
+
+
+## ChromaDB
+
+The project uses `ChromaDB` for its vector database. Use the script below to initiate the chroma db server. The chroma db cli will create a `chorma.sqlite3` on `./asset` directory.
+
+```bash
+./db/starting.sh
+```
+
+To test whether the project's vector db is working, use the following script.
+
+```bash
+python ./db/test.py
+```
+
+
+## GPU with docker
+
+Checkout this official Nvidia Website [GPU-Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) to find out the way on how to use Docker + GPU.
