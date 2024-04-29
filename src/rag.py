@@ -1,9 +1,12 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from langchain.vectorstores.chroma import Chroma
 import torch
-from chromadb.utils import embedding_functions
+from langchain_core.documents import Document
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 import chromadb
+
+from typing import List, Tuple
+
 
 class RetrieveAugment:
     sep = """\n\n--\n\n"""
@@ -40,7 +43,7 @@ class RetrieveAugment:
         model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    def create_pipeline(self):
+    def load_llama(self):
         self.llama = pipeline(
             "text-generation",
             model="meta-llama/Meta-Llama-3-8B-Instruct",
@@ -49,7 +52,7 @@ class RetrieveAugment:
         )
         print("llama ready")
 
-    def retrieve_context(self, query: str, collection_name: str = "test_collection"):
+    def retrieve_context(self, query: str, collection_name: str = "test_collection") -> List[Tuple[Document, float]]:
         """
         `R` of RAG.
         """
@@ -64,12 +67,66 @@ class RetrieveAugment:
             collection_name=collection_name,
             embedding_function=self.embeddings
         )
+
         sim_doc = client.similarity_search_with_relevance_scores(
             query=query,
             k=self.max_chunk_in_context
         )
 
-        # client.
-        return sim_doc, client
-        # context = self.sep.join([doc.page_content for doc in sim_doc ])
-        # ...
+        return sim_doc
+
+    def process_retrieved(self, doc: List[Tuple[Document, float]]) -> str: 
+        if len(doc) > 0:
+            context = self.sep.join(
+                [text.page_content for text, score in doc if score > 0.1]
+            )  # _ is relevance score
+            # context_less_relevant = self.sep.join(
+            #     [text.page_content for text, score in doc if score <= 0.1]
+            # )
+            return context
+        else:
+            return "No relavent information were found for the user's question."
+    
+    def augmented_generate(self, question: str, collection_name: str = "test_collection"):
+        if self.llama is None:
+            print("LLM not loaded")
+            return
+        
+        ctx = self.retrieve_context(question, collection_name)
+
+        prefix_context = "From the context given below, answer the question of user \n"
+        content_context = self.process_retrieved(ctx)
+
+        message = [
+            {
+                "role": "system",
+                "content": f"{prefix_context} {content_context}"
+            },
+            {
+                "role": "user",
+                "content": question,
+            }
+        ]
+
+        prompt = self.llama.tokenizer.apply_chat_template(
+            message,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+
+        terminators = [
+            self.llama.tokenizer.eos_token_id,
+            self.llama.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        ]
+
+        outputs = self.llama(
+            prompt,
+            max_new_tokens=256,
+            eos_token_id=terminators,
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
+
+        return outputs[0]["generated_text"][len(prompt):], ctx
+

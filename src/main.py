@@ -12,10 +12,18 @@ if __name__ == "__main__":
     ra = RetrieveAugment()
     ra.load_embedding_model()
     ra.load_vectordb()
+    ra.load_llama()
 
     question = "How much cash did Neutron rocket development burned during 2023?"
-    ctx, client = ra.retrieve_context(query=question)
+    ans, source = ra.augmented_generate(question=question)
 
     print(question)
     print("Answer")
-    print(ctx)
+    print(ans)
+
+    question = "Who are the main participants of this meeting?"
+    ans, source = ra.augmented_generate(question=question)
+
+    print(question)
+    print("Answer")
+    print(ans)
