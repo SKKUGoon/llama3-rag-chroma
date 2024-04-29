@@ -75,10 +75,10 @@ class RetrieveAugment:
 
         return sim_doc
 
-    def process_retrieved(self, doc: List[Tuple[Document, float]]) -> str: 
+    def process_retrieved(self, doc: List[Tuple[Document, float]], threshold: float = 0.05) -> str: 
         if len(doc) > 0:
             context = self.sep.join(
-                [text.page_content for text, score in doc if score > 0.1]
+                [text.page_content for text, score in doc if score > threshold]
             )  # _ is relevance score
             # context_less_relevant = self.sep.join(
             #     [text.page_content for text, score in doc if score <= 0.1]
@@ -94,13 +94,13 @@ class RetrieveAugment:
         
         ctx = self.retrieve_context(question, collection_name)
 
-        prefix_context = "From the context given below, answer the question of user \n"
+        prefix_context = "From the context given below, answer the question of user. "
         content_context = self.process_retrieved(ctx)
 
         message = [
             {
                 "role": "system",
-                "content": f"{prefix_context} {content_context}"
+                "content": f"{prefix_context}\n{content_context}"
             },
             {
                 "role": "user",
@@ -129,4 +129,8 @@ class RetrieveAugment:
         )
 
         return outputs[0]["generated_text"][len(prompt):], ctx
+
+    def translated_response(self, language: str):
+        ...
+
 
