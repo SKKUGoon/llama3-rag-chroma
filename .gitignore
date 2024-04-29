@@ -161,3 +161,4 @@ cython_debug/
 
 # ChromaDatabase Vectordatabase 
 *.sqlite3
+*.bin
