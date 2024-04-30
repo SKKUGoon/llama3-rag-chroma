@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoTokenizer, pipeline
 from langchain.vectorstores.chroma import Chroma
 import torch
 from langchain_core.documents import Document
@@ -133,4 +133,5 @@ class RetrieveAugment:
     def translated_response(self, language: str):
         ...
 
-
+    def augmented_generate_multishot(self, shot: int = 3):
+        ...

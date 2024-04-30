@@ -1,18 +1,35 @@
-from text_parser import DBer
 from rag import RetrieveAugment
 
 
 if __name__ == "__main__":
-    # p = DBer()
-    # p.load_vectordb()
-    # p.load_embedding_model()
-    # collection = p.vectordb.get_collection("test_collection")
-    # print(collection.peek())
-
     ra = RetrieveAugment()
     ra.load_embedding_model()
     ra.load_vectordb()
     ra.load_llama()
+
+    # Question 0
+    question = "부동산 매입가 가격은?"
+    ans, source = ra.augmented_generate(question=question, collection_name="test_real_estate")
+
+    print("\n-----\n")
+    print("Q0", question)
+    print("Answer")
+    print(ans)
+    print("\n-----\n")
+    print("Source")
+    print(source)
+
+    # Question 0-1
+    question = "부동산에 드는 총 비용은?"
+    ans, source = ra.augmented_generate(question=question, collection_name="test_real_estate")
+
+    print("\n-----\n")
+    print("Q0-1", question)
+    print("Answer")
+    print(ans)
+    print("\n-----\n")
+    print("Source")
+    print(source)
 
     # Question 1
     question = "How much cash did Neutron rocket development burned during 2023?"
