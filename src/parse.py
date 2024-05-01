@@ -184,6 +184,13 @@ class RagSQLSource:
     def __init__(self) -> None:
         ...
 
+    def from_prisma(self) -> None:
+        ...
+
+    def _lexing_prisma(self) -> None:
+        ...
+
+
 class Vectorizer:
     def __init__(self) -> None:
         self.embeddings = None
