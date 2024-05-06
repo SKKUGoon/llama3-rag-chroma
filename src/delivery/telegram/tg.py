@@ -1,7 +1,15 @@
 from delivery.telegram.auth import TelegramAuth
+from ai.rag import RetrieveAugment
 
 from telethon import TelegramClient, events
 
+# Load the RAG system
+ra = RetrieveAugment()
+ra.load_embedding_model()
+ra.load_vectordb()
+ra.load_llama()
+
+# Start the telegram client
 auth = TelegramAuth("test_session")
 client = TelegramClient(auth.session_name, auth.app_id, auth.app_hash)
 client.start(bot_token=auth.token)
@@ -55,7 +63,3 @@ def main():
     """
     print("------ telegram bot starting ------")
     client.run_until_disconnected()
-
-
-if __name__ == "__main__":
-    main()
