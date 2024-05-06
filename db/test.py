@@ -7,4 +7,4 @@ client = chromadb.HttpClient(host='localhost', port=8000)
 result = client.heartbeat()
 
 # Reset?
-# client.reset()
+client.reset()
