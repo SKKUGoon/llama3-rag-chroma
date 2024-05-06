@@ -1,11 +1,17 @@
 from delivery.telegram.auth import TelegramAuth
 from ai.rag import RetrieveAugment
+from ai.parse import Vectorizer, RagTextSource
 
 from telethon import TelegramClient, events
 from langchain_core.documents import Document
 
 from typing import List, Tuple, Final
 import time
+
+# Load the Vector Database Uploader
+vec = Vectorizer()
+vec.load_vectordb()
+vec.load_embedding_model()
 
 # Load the RAG system
 ra = RetrieveAugment()
@@ -19,10 +25,11 @@ client = TelegramClient(auth.session_name, auth.app_id, auth.app_hash)
 client.start(bot_token=auth.token)
 telegram_magic_word: Final = {"/start"}
 
+
 @client.on(events.NewMessage(pattern='/start'))
 async def start(event):
     sender = await event.get_sender()
-    id_ = f"{sender.username}({sender.last_name} {sender.first_name})"
+    _ = f"{sender.username}({sender.last_name} {sender.first_name})"
     
     # Update user information context
     ra.update_user_info(sender.username)
@@ -32,7 +39,8 @@ async def start(event):
 ⚡️ **Telegram Chat Powered with AI**
 
 Hello, My name is **Iggy**, your productivity chat bot.
-I'm currently in `development and testing` status so my answer might not be entirely accurate
+I'm being powered by Meta(Facebook) AI's Llama model.
+I'm currently in `development` status so my answer might not be entirely accurate.
 
 [**How it works:**]
 ➡️ **Regular Chat**: Just like any other chatbot, you can just casually chat with me.
@@ -46,6 +54,7 @@ I'm currently in `development and testing` status so my answer might not be enti
 """
     await event.respond(start_msg)
 
+
 @client.on(events.NewMessage())
 async def watchman(event):
     """
@@ -55,14 +64,34 @@ async def watchman(event):
     print(f"{sender.username}({sender.last_name} {sender.first_name})")
     print(event.message)
 
+
 @client.on(events.NewMessage())
 async def get_user_behavior(event):
     if event.message.file:
         # File uploading event
-        ...
+        if event.message.file.name.endswith('.txt'):
+            # Process begins
+            wait_msg = handle_response_start()
+            time_start = time.time()
+            await event.respond(wait_msg)
+
+            # Download and process the file
+            path = await event.message.download_media(file='/tmp')
+            summary = handle_file(path)
+            time_end = time.time()
+            await event.respond(summary)
+
+            # Process ended
+            end_msg = handle_response_end(time_end - time_start)
+            await event.respond(end_msg)
+        else:
+            fail_msg = handle_unsupported_file(event.message.file.name)
+            await event.respond(fail_msg)
+
     elif event.message.message in telegram_magic_word:
         # Skip the rag. Magic Keyword func is handling it
         ...
+
     else:
         # Regular chat event
         user_q = str(event.message.message)
@@ -83,14 +112,45 @@ async def get_user_behavior(event):
         end_msg = handle_response_end(time_end - time_start)
         await event.respond(end_msg)
 
+
+def handle_file(path: str):
+    # TODO: Change the testing title
+    collection_test = "test_collection"
+    title_test = "telegram testing"
+    data = RagTextSource(path, title_test)
+
+    vec_result = vec.vectorify_text(data)
+    vec.collection_insert_text(vec_result, data.title, collection_test)
+
+    msg = ""
+    with open(path, 'r') as file:
+        content = file.read()
+
+        summary = ra.generate_summary(content)
+        msg = handle_response_summary(summary)
+    return msg
+
+
+
+def handle_unsupported_file(filename: str):
+    return f"❌ {filename} has unsupported extension. Process terminating."
+
+
 def handle_response_start():
     return "⏰ Processing..."
 
+
 def handle_response_end(t: int):
-    return f"⏰ Process end. It took {'%.0f' % round(t, 0)} seconds."
+    return f"⏰ Process ended. It took {'%.0f' % round(t, 0)} seconds."
+
+
+def handle_response_summary(summary: str):
+    return f"⚡️ **[Summary]**\n{summary}"
+
 
 def handle_response_answer(answer: str):
-    return f"⚡️**[Answer]**\n{answer}"
+    return f"⚡️ **[Answer]**\n{answer}"
+
 
 def handle_response_source(source: List[Tuple[Document, float]]):
     source_ls: List[str] = list()
@@ -99,8 +159,9 @@ def handle_response_source(source: List[Tuple[Document, float]]):
         source_ls.append(seg)
 
     sources = "\n".join(source_ls)
-    msg = f"🎟️**[Source for the answer]**\n{sources}"
+    msg = f"🎟️ **[Source for the answer]**\n{sources}"
     return msg
+
 
 def main():
     """

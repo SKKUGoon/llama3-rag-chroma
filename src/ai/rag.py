@@ -120,7 +120,35 @@ If a question does not match the provided context, kindly advise the user to ask
             return f"The user's name is {self.user_name}. {self.prompt_prefix}\nContext:\n{context}"
         else:
             return f"{self.prompt_prefix}\nContext:\n{context}"
-        ...
+        
+    def generate_summary(self, long_text: str) -> str:
+        if self.llm is None or self.termination is None:
+            print("LLM is not loaded properly")
+            return 
+        
+        message = [
+            {
+                "role": "user",
+                "content": f"Summarize the following: {long_text}",
+            }
+        ]
+
+        prompt = self.llm.tokenizer.apply_chat_template(
+            message,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+
+        outputs = self.llm(
+            prompt,
+            max_new_tokens=256,
+            eos_token_id=self.termination,
+            do_sample=True,
+            temperature=0.6,
+            top_p=0.9,
+        )
+
+        return outputs[0]["generated_text"][len(prompt):]
 
     def augmented_generate(self, question: str, collection_name: str = "test_collection"):
         if self.llm is None or self.termination is None:

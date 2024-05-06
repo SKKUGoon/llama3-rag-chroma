@@ -165,3 +165,7 @@ cython_debug/
 
 # Telegram session
 *.session
+
+# Telegram file uploads
+tmp
+tmp/*
