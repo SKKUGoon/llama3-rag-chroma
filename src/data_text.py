@@ -13,11 +13,15 @@ if __name__ == "__main__":
     my_collection_nm = "test_collection"
 
     # Data
+    # source_file = "./src/raw/test/rklb_q4_earnings.txt"
+    # source_file_title = "Rocket lab 2023 Q4 Earnings"
+    
+    source_file = "./src/raw/test/googl_q1_earnings.txt"
+    source_file_title = "Google Inc 2024 Q1 Earnings"
     data = RagTextSource(
-        "./raw/test/rklb_q1_earnings.txt", 
-        "Rocket lab 2024 Q1 Earnings"
+        source_file, 
+        source_file_title
     )
-    data.read()
 
     # Vectorize
     vec = Vectorizer()

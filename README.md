@@ -63,7 +63,20 @@ To test whether the project's vector db is working, use the following script.
 python ./db/test.py
 ```
 
-
 ## GPU with docker
 
 Checkout this official Nvidia Website [GPU-Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) to find out the way on how to use Docker + GPU.
+
+## Chatbot with 2 agent.
+
+> To solve the Issue of RAG Chat bot actually acting like a 'personalized' chatbot
+> introduce 2 sets of agent. 
+>
+> Actually there's only one llama 3 model, but there are two different tokenized chat history.
+
+[Post from llama-index](https://www.linkedin.com/feed/update/urn:li:activity:7192523602141802498/)
+
+Inserting a Query understanding layer. This interpretes the question and chooses whether or not to use the interprete layer. 
+
+
+

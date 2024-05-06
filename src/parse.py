@@ -11,6 +11,7 @@ import warnings
 class RagTextSource:
     def __init__(self, path: str | None = None, title: str | None = None):
         self.path = path
+        self.title = title
 
         if self.title is None:
             self.title = "Untitled Text Source"
@@ -187,7 +188,7 @@ class RagSQLSource:
     def from_prisma(self) -> None:
         ...
 
-    def _lexing_prisma(self) -> None:
+    def sql_lexing(self) -> None:
         ...
 
 
@@ -275,15 +276,19 @@ class Vectorizer:
             print("embedding not loaded. Use `load_embedding_model` method")
             return
         
+        clct = self.vectordb.get_or_create_collection(collection, embedding_function=self.embeddings)
+        id_start = clct.count()
+        print(f"[Status] Already have {id_start} rows. Inserting beyond")
+    
         # Create meta data and id list
         meta = list()
         ids = list()
 
         for i in range(len(vectorized)):
             meta.append({"title": text_title})
-            ids.append(str(i + 1))
+            ids.append(str(i + id_start + 1))
+
         
-        clct = self.vectordb.get_or_create_collection(collection, embedding_function=self.embeddings)
 
         # Insert document
         clct.add(
@@ -291,5 +296,5 @@ class Vectorizer:
             metadatas=meta,
             ids=ids,
         )
-
+        print(f"[Status] Inserted ids: {len(ids)}")
         return clct

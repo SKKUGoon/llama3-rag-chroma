@@ -10,14 +10,21 @@ from typing import List, Tuple
 
 class RetrieveAugment:
     sep = """\n\n--\n\n"""
+    prompt_prefix = """
+From the context given below, answer the question of user. 
+If a question does not match the provided context, kindly advise the user to ask questions within the context of the document.
+"""
 
     def __init__(self) -> None:
         self.max_chunk_in_context = 2
         
-        self.llama = None
+        self.llm = None
         self.vectordb = None
         self.embeddings = None
-        pass
+        self.termination = None
+
+        # Stores chatting history
+        self.chat_history = list()
 
     def load_embedding_model(self):
         """
@@ -26,6 +33,18 @@ class RetrieveAugment:
         """
         model_name = "sentence-transformers/all-MiniLM-L6-v2"
         self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
+
+    def health_check(self) -> bool:
+        if self.vectordb is None:
+            return False
+        
+        try:
+            self.vectordb.heartbeat()
+            print("healthy")
+            return True
+        except ValueError:
+            print("vector database down...")
+            return False
 
     def load_vectordb(self):
         client = chromadb.HttpClient(host='localhost', port=8000)
@@ -44,13 +63,18 @@ class RetrieveAugment:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def load_llama(self):
-        self.llama = pipeline(
+        self.llm = pipeline(
             "text-generation",
             model="meta-llama/Meta-Llama-3-8B-Instruct",
             model_kwargs={"torch_dtype": torch.bfloat16},
             device="cuda",
         )
-        print("llama ready")
+
+        self.termination = [
+            self.llm.tokenizer.eos_token_id,
+            self.llm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+        ]
+        print("llama, terminator tokens, ready")
 
     def retrieve_context(self, query: str, collection_name: str = "test_collection") -> List[Tuple[Document, float]]:
         """
@@ -88,45 +112,49 @@ class RetrieveAugment:
             return "No relavent information were found for the user's question."
     
     def augmented_generate(self, question: str, collection_name: str = "test_collection"):
-        if self.llama is None:
-            print("LLM not loaded")
+        if self.llm is None or self.termination is None:
+            print("LLM is not loaded properly")
             return
         
         ctx = self.retrieve_context(question, collection_name)
-
-        prefix_context = "From the context given below, answer the question of user. "
         content_context = self.process_retrieved(ctx)
 
+        # Because it's a RAG, Store the content history (system prompt) as well
         message = [
             {
                 "role": "system",
-                "content": f"{prefix_context}\n{content_context}"
+                "content": f"{self.prompt_prefix}\nContext:\n{content_context}"
             },
             {
                 "role": "user",
                 "content": question,
             }
         ]
+        self.chat_history.extend(message)
 
-        prompt = self.llama.tokenizer.apply_chat_template(
+        prompt = self.llm.tokenizer.apply_chat_template(
             message,
             tokenize=False,
             add_generation_prompt=True
         )
 
-        terminators = [
-            self.llama.tokenizer.eos_token_id,
-            self.llama.tokenizer.convert_tokens_to_ids("<|eot_id|>")
-        ]
-
-        outputs = self.llama(
+        outputs = self.llm(
             prompt,
             max_new_tokens=256,
-            eos_token_id=terminators,
+            eos_token_id=self.termination,
             do_sample=True,
             temperature=0.6,
             top_p=0.9,
         )
+
+        # Add the response from the assistant
+        # Record the whole thing into `chat_history` attribute
+        self.chat_history.extend([
+            {
+                "role": "assistant",
+                "content": outputs[0]["generated_text"][len(prompt):],
+            }
+        ])
 
         return outputs[0]["generated_text"][len(prompt):], ctx
 
