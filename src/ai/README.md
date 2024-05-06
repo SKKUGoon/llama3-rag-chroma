@@ -37,7 +37,7 @@ print("Source")
 print(source)
 
 # Question 3
-question = "Give me an overview on Apple's first quarter financial performance on 2024?"
+question = "Give me an overview on Apple's december quarter financial performance on 2024?"
 ans, source = ra.augmented_generate(question=question)
 
 print("\n-----\n")

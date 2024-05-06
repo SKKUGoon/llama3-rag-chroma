@@ -24,7 +24,11 @@ If a question does not match the provided context, kindly advise the user to ask
         self.termination = None
 
         # Stores chatting history
+        self.user_name = None
         self.chat_history = list()
+
+    def update_user_info(self, name: str) -> None:
+        self.user_name = name
 
     def load_embedding_model(self):
         """
@@ -111,6 +115,13 @@ If a question does not match the provided context, kindly advise the user to ask
         else:
             return "No relavent information were found for the user's question."
     
+    def build_sys_prompt(self, context: str):
+        if self.user_name is not None:
+            return f"The user's name is {self.user_name}. {self.prompt_prefix}\nContext:\n{context}"
+        else:
+            return f"{self.prompt_prefix}\nContext:\n{context}"
+        ...
+
     def augmented_generate(self, question: str, collection_name: str = "test_collection"):
         if self.llm is None or self.termination is None:
             print("LLM is not loaded properly")
