@@ -9,7 +9,7 @@ class TelegramAuth:
     app_id_key: str = "_TELEGRAM_APP_ID"
     app_hash_key: str = "_TELEGRAM_APP_PW"
 
-    def __init__(self, session_name: str, env_path: str = "../.env"):
+    def __init__(self, session_name: str, env_path: str = ".env"):
         load_dotenv(env_path)
         self.token = self._get_token()
         self.app_id, self.app_hash = self._get_app_id_hash()
