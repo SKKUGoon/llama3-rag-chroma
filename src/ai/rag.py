@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain.vectorstores.chroma import Chroma
 from langchain_core.documents import Document
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
@@ -79,6 +79,23 @@ If a question does not match the provided context, kindly advise the user to ask
             self.llm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
         ]
         print("llama, terminator tokens, ready")
+
+    def load_phi3(self):
+        model_name = "microsoft/Phi-3-mini-128k-instruct"
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map="auto",
+            torch_dtype="auto",
+            trust_remote_code=True,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        self.llm = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer
+        )
+        print("phi3 ready")
 
     def retrieve_context(self, query: str, collection_name: str = "test_collection") -> List[Tuple[Document, float]]:
         """
